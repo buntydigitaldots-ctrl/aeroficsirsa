@@ -1,0 +1,613 @@
+PROMPT START
+
+Act as a **Senior PHP Architect & Full-Stack E-commerce Expert**.
+
+I want you to design and generate a **complete, production-ready e-commerce website** in **pure PHP 8+ (NO framework like Laravel)** with **MySQL 8+** for:
+
+- Brand: **AROFIC**
+- Domain: **aerofic.com**
+- Products: **1000+ SKUs** (Bath Fittings / Faucets, Sanitaryware, Pipes & Fittings, Tanks, Kitchen Sinks, Designer Collection)
+- Payment Gateway: **Razorpay (India)**
+- Look: **Luxury, modern, 3D-style animations, fully responsive**
+- All dynamic content must be **fully manageable from an Admin Panel** (client will manage banners, categories, products, testimonials, FAQs, gallery, videos, etc.).
+
+Key rules:
+
+1. **EVERYTHING (banners, categories, products, contact enquiries, orders, testimonials, FAQs, gallery, videos, sections) must be managed from Admin Panel.**
+2. No hardcoded categories/products/sliders in frontend code (only from database).
+
+------------------------------------------------
+1. ARCHITECTURE & FOLDER STRUCTURE
+------------------------------------------------
+
+Use a lightweight MVC structure:
+
+- `public/`
+  - `index.php` (front controller + router)
+  - `assets/css/`
+  - `assets/js/`
+  - `assets/images/`
+  - `assets/uploads/products/`
+  - `assets/uploads/sliders/`
+  - `assets/uploads/pages/`
+  - `assets/uploads/gallery/`
+  - `assets/uploads/videos/` (if storing uploaded video files)
+  - `assets/uploads/catalogues/`
+- `app/`
+  - `controllers/`
+    - `HomeController.php`
+    - `SegmentController.php`
+    - `CollectionController.php`
+    - `CategoryController.php`
+    - `ProductController.php`
+    - `SearchController.php`
+    - `CartController.php`
+    - `CheckoutController.php`
+    - `AccountController.php`
+    - `PageController.php`        (About, FAQ, etc.)
+    - `BlogController.php`
+    - `ContactController.php`
+    - `GalleryController.php`
+    - `VideoController.php`
+    - `Admin/`
+      - `AdminAuthController.php`
+      - `DashboardController.php`
+      - `AdminHomeController.php`       (sliders + home sections)
+      - `AdminAboutController.php`      (about sections)
+      - `AdminCategoryController.php`
+      - `AdminSegmentController.php`
+      - `AdminCollectionController.php`
+      - `AdminProductController.php`
+      - `AdminOrderController.php`
+      - `AdminCustomerController.php`
+      - `AdminDealerController.php`
+      - `AdminContactController.php`    (contact/enquiry listing)
+      - `AdminTestimonialController.php`
+      - `AdminFaqController.php`
+      - `AdminGalleryController.php`
+      - `AdminVideoController.php`
+      - `AdminBlogController.php`
+      - `AdminPageController.php`
+      - `AdminBannerController.php`
+      - `AdminSettingsController.php`
+      - `AdminSEOController.php`
+      - `AdminReportController.php`
+  - `models/` (BaseModel + one model per table)
+  - `views/` (frontend templates)
+    - `views/home/`
+    - `views/category/`
+    - `views/product/`
+    - `views/pages/`
+    - `views/blog/`
+    - `views/gallery/`
+    - `views/video/`
+  - `views/admin/` (admin panel templates)
+- `config/`
+  - `config.php`
+  - `database.php`
+  - `razorpay.php`
+- `core/`
+  - `Router.php`
+  - `Controller.php`
+  - `Model.php`
+  - `View.php`
+  - `Auth.php`
+  - `Session.php`
+  - `CSRF.php`
+  - `Validator.php`
+  - `SEO.php` (meta tags, sitemap, breadcrumbs, schema)
+- `storage/`
+  - `logs/`
+  - `cache/`
+- `sql/`
+  - `schema.sql`
+  - `seed.sql`
+- `README.md`
+
+------------------------------------------------
+2. DATABASE DESIGN (MYSQL)
+------------------------------------------------
+
+Create full SQL (`CREATE TABLE`) for all required entities.
+
+CORE USER & ADDRESS
+-------------------
+
+- `users`  
+- `user_addresses`
+
+SEGMENT / COLLECTION / CATEGORY / PRODUCT
+-----------------------------------------
+
+- `segments`  
+  - Represents top-level sections: Bath Fittings, Sanitaryware, Pipes & Fittings, Tanks, Kitchen Sinks, Designer Collection.
+
+- `collections`  
+  - Faucet & sanitary collections.
+
+- `categories`
+  - **Very important**: categories must be fully dynamic.
+  - Client can **add/edit/delete categories from Admin Panel** any time.
+  - As soon as new category is created + marked active, it must:
+    - Appear in category listing pages.
+    - Optionally appear in home page category section if flagged `show_on_home`.
+
+- `products`
+  - Each product has:
+    - segment_id, collection_id, category_id, brand_id (optional)
+    - name, slug
+    - article_code, sku, model_code
+    - short_description, long_description
+    - price fields (MRP, selling_price, tax %)
+    - size_text, dimensions
+    - features JSON, attributes JSON
+    - flags: is_featured, is_new, show_on_home
+    - status (active/inactive)
+    - SEO fields: meta_title, meta_description, meta_keywords
+
+- `product_images`
+  - **At least 4 image slots per product** (support up to 4 or more images).
+  - `product_id, image_path, alt_text, is_primary, sort_order`.
+
+- `product_attributes`  
+- `brands` (if needed)  
+
+COMMERCE – CART, ORDERS, PAYMENTS
+----------------------------------
+
+- `carts`
+- `cart_items`
+- `orders`
+- `order_items`
+- `payments`
+- `shipping_methods`
+- `coupons`
+
+CONTENT & CMS
+-------------
+
+- `banners` (general banners if needed besides sliders)
+- `cms_pages` (About, Terms, Privacy, etc.)
+- `blog_posts`
+
+CONTACT & ENQUIRIES
+-------------------
+
+- `contact_queries`
+  - IMPORTANT:
+    - All contact forms, dealer enquiries, complaints etc. from frontend must be saved here and visible in Admin Panel.
+    - Fields for name, email, phone, subject, message, type (`contact`, `dealer`, `complaint`, `project`), status, created_at, handled_by.
+
+TESTIMONIALS – ADMIN MANAGED
+-----------------------------
+
+- `testimonials`
+  - `id`
+  - `name`
+  - `designation`
+  - `company`
+  - `message`
+  - `rating` (optional)
+  - `image_path` (optional)
+  - `show_on_home` (boolean)
+  - `show_on_page` (boolean)
+  - `sort_order`
+  - `is_active`
+  - `created_at`, `updated_at`
+
+FAQs – ADMIN MANAGED
+--------------------
+
+- `faqs`
+  - `id`
+  - `question`
+  - `answer_html`
+  - `category` (optional)
+  - `show_on_home` (boolean)
+  - `show_on_faq_page` (boolean)
+  - `sort_order`
+  - `is_active`
+  - `created_at`, `updated_at`
+
+GALLERY – ADMIN MANAGED
+-----------------------
+
+- `gallery_items`
+  - `id`
+  - `title`
+  - `description`
+  - `image_path`
+  - `show_on_home` (boolean)        // if true, appears on home gallery section
+  - `show_on_gallery_page` (boolean)
+  - `sort_order`
+  - `is_active`
+  - `created_at`, `updated_at`
+
+VIDEOS – ADMIN MANAGED
+----------------------
+
+- `videos`
+  - `id`
+  - `title`
+  - `description`
+  - `video_type` (e.g., `upload`, `youtube`, `vimeo`)
+  - `video_path` (for uploads) OR `video_url` (for YouTube/Vimeo link)
+  - `thumbnail_path` (optional)
+  - `show_on_home` (boolean)        // if true, appears in home video section
+  - `show_on_video_page` (boolean)  // for dedicated videos page
+  - `sort_order`
+  - `is_active`
+  - `created_at`, `updated_at`
+
+HOME SLIDERS – 3 GROUPS, ADMIN MANAGED
+--------------------------------------
+
+- `home_sliders`
+  - `id`
+  - `slider_group` (`hero-1`, `hero-2`, `hero-3`)
+  - `title`
+  - `subtitle`
+  - `description`
+  - `cta_text`
+  - `cta_link`
+  - `alignment` (always left-content-right-image layout in design)
+  - `background_style`
+  - `image_path`
+  - `desktop_order`
+  - `mobile_order`
+  - `is_active`
+  - `created_at`, `updated_at`
+
+HOME SECTIONS – 15+ SECTIONS, ADMIN MANAGED
+-------------------------------------------
+
+- `home_sections`
+  - `id`
+  - `section_key` (predefined keys like `home_about`, `home_segments`, `home_featured_products`, `home_sanitary`, `home_tanks`, `home_designer`, `home_technology`, `home_usps`, `home_stats`, `home_video`, `home_testimonials`, `home_blogs`, `home_catalogues`, `home_dealer_cta`, `home_faq`, `home_gallery`, etc.)
+  - `title`
+  - `subtitle`
+  - `content_html`
+  - `background_style`
+  - `layout_type`
+  - `config_json`
+  - `sort_order`
+  - `is_active`
+  - `created_at`, `updated_at`
+
+ABOUT PAGE SECTIONS – 12+, ADMIN MANAGED
+----------------------------------------
+
+- `about_sections`
+  - `id`
+  - `title`
+  - `slug`
+  - `content_html`
+  - `image_path`
+  - `layout_type`
+  - `sort_order`
+  - `is_active`
+  - `created_at`, `updated_at`
+
+DEALERS, SETTINGS, LOGS
+-----------------------
+
+- `dealers`
+- `dealer_pricing`
+- `settings`
+- `activity_logs`
+
+Write all `CREATE TABLE` statements with indexes & foreign keys.
+
+------------------------------------------------
+3. FRONTEND FUNCTIONALITY (USER SIDE)
+------------------------------------------------
+
+NAVIGATION
+
+- Menu items from config or hardcoded list, but categories data must come from DB.
+- Top menu includes: Home, Segments, Categories, Blogs, Gallery, Videos, About, Contact, FAQ, Dealer Enquiry, etc.
+
+HOME PAGE
+
+- Top: **3 slider areas** (Hero-1, Hero-2, Hero-3) pulled from `home_sliders`, client-managed from admin.
+  - Layout: always left side content, right side image, with gradient/3D style.
+
+- Then **15+ sections** (driven by `home_sections`), including:
+  - About strip       → content from `home_sections` + link to `/page/about-us`
+  - Segment grid      → dynamic from `segments`
+  - Category / product highlights:
+    - **Categories & products MUST be dynamic**:
+      - If client adds a new category & marks it `is_active` and `show_on_home`, it must automatically appear on home sections that use categories.
+      - If client adds a new product & marks it `is_active` and `show_on_home`, it must appear in home’s product carousels.
+  - Sanitaryware highlights
+  - Tanks & Pipes highlights
+  - Designer collection area
+  - Technology strip
+  - Why Choose Us / USP strip
+  - Stats / counters
+  - Video section:
+    - Pull from `videos` table where `show_on_home = 1`.
+  - Testimonials:
+    - Pull from `testimonials` where `show_on_home = 1`.
+  - FAQ strip:
+    - Pull few FAQs where `show_on_home = 1`.
+  - Gallery strip:
+    - Pull some `gallery_items` where `show_on_home = 1`.
+  - Blog preview:
+    - Recent blog posts.
+  - Download catalogues:
+    - PDFs uploaded from admin.
+  - Dealer / enquiry CTA.
+
+ABOUT PAGE (`/page/about-us`)
+
+- Uses `about_sections` to build at least 12 blocks (Our story, mission, vision, values, manufacturing, technology, rimless, sustainability, presence map, leadership, milestones, awards/testimonials).
+- Order & content fully admin-controlled.
+
+CATEGORY PAGES
+
+- `/category/{slug}`
+- Category details dynamic from DB.
+- Products listing loaded from `products` where `category_id` matches and `status = active`.
+- Filters: price, attributes.
+- Sorting: new, price low/high, name.
+- If admin adds a new category and products, category automatically gets its own page and appears in any category lists / home sections where configured.
+
+PRODUCT PAGES
+
+- `/product/{slug}`
+- Show:
+  - up to 4 images from `product_images`.
+  - full product info.
+  - SEO meta per product.
+  - related products (same category/collection).
+- Product automatically appears:
+  - On category page.
+  - Anywhere on home where `show_on_home` or config matches.
+
+CONTACT FORM
+
+- `/contact`
+- Fields: name, email, phone, subject, message.
+- On submit:
+  - Insert into `contact_queries` with type `contact`, status `new`.
+  - Show success message to user.
+- **Admin Panel must show all enquiries.**
+
+FAQ PAGE
+
+- `/faq`
+- Load from `faqs` where `show_on_faq_page = 1`.
+
+GALLERY PAGE
+
+- `/gallery`
+- Load from `gallery_items` where `show_on_gallery_page = 1`.
+
+VIDEOS PAGE
+
+- `/videos`
+- Load from `videos` where `show_on_video_page = 1`.
+
+BLOG, DEALER ENQUIRY, ORDER FLOW, ACCOUNT
+
+- As in previous specifications:
+  - blog listing & detail.
+  - dealer enquiry form → saved to `contact_queries` type `dealer`.
+  - full cart + checkout + Razorpay payment + orders listing in account.
+  - user registration, login, profile, address, order history.
+
+------------------------------------------------
+4. ADMIN PANEL – EVERYTHING FROM ADMIN
+------------------------------------------------
+
+Admin URL: `/admin`
+
+A. AUTH & ROLES
+
+- Admin login, logout, password change.
+- Roles: super_admin, product_manager, order_manager, content_manager, dealer_manager, report_viewer.
+- Role-based permissions.
+
+B. DASHBOARD
+
+- KPIs, charts, recent orders, recent enquiries.
+
+C. SETTINGS
+
+- General settings (site name, logo, contact details, social links).
+- Razorpay settings (key_id, key_secret, mode).
+- Email/SMTP settings.
+- SEO defaults.
+
+D. HOME MANAGEMENT (SLIDERS + SECTIONS)
+
+1. **Sliders (3 slider groups)**
+
+- Admin can:
+  - Add new slide
+  - Edit slide (text, image, CTA, background)
+  - Delete slide
+  - Activate/deactivate slide
+  - Set order
+- `slider_group` choices: hero-1, hero-2, hero-3.
+
+2. **Home Sections**
+
+- Admin can:
+  - Add/edit/delete `home_sections`.
+  - Change titles, subtitles, content_html.
+  - Control background style, layout_type.
+  - Use `config_json` to select which segments/categories/products/blogs to show.
+  - Enable/disable sections.
+  - Reorder sections using sort_order.
+
+E. ABOUT MANAGEMENT
+
+- Admin can CRUD `about_sections`:
+  - Manage 12+ sections (story, mission, etc.).
+  - Edit titles, content, images.
+  - Sort order.
+  - Enable/disable.
+
+F. CATEGORY & PRODUCT MANAGEMENT (FULLY DYNAMIC)
+
+1. **Categories**
+
+- Admin can:
+  - Add, edit, delete categories.
+  - Set segment_id, parent_id (optional), name, slug, description, image.
+  - Choose `show_in_menu`, `show_on_home`.
+  - Set SEO meta.
+- When admin adds a category & marks it active:
+  - Category automatically appears:
+    - In category dropdowns.
+    - On category list page.
+    - On home category section (if `show_on_home = 1`).
+
+2. **Products**
+
+- Admin can fully manage each product:
+  - Assign segment, collection, category.
+  - Name, slug, article_code, sku, model_code.
+  - Prices (MRP, selling_price, tax).
+  - Short & long descriptions.
+  - Attributes / features.
+  - Flags: is_featured, is_new, show_on_home, status.
+  - **SEO fields per product**: meta_title, meta_description, meta_keywords.
+- **Images:**
+  - Upload up to 4 images.
+  - Mark primary image.
+  - Reorder images.
+  - Replace/remove images.
+- Once admin adds product & sets status active:
+  - Automatically visible in its category page.
+  - If `show_on_home = 1`, visible in home product sections.
+  - Included in search and sitemap.
+
+G. CONTACT ENQUIRIES
+
+- Admin `AdminContactController` lists all entries from `contact_queries`:
+  - Filter by type (contact, dealer, complaint, project).
+  - Mark status (new, in-progress, resolved).
+  - Add internal notes.
+- No enquiry is lost; all forms on frontend write to this table.
+
+H. ORDER MANAGEMENT
+
+- Admin can:
+  - See all orders.
+  - View order details (items, addresses, payment, Razorpay IDs).
+  - Update order status, payment status.
+  - Generate invoice PDFs.
+  - Export order list.
+
+I. TESTIMONIAL MANAGEMENT
+
+- Admin can:
+  - Add/edit/delete testimonials.
+  - Upload image, set name, designation, company, message.
+  - Set `show_on_home` and `show_on_page`.
+  - Set sort_order.
+- Home pulls testimonials where `show_on_home = 1`.
+- Dedicated testimonials section/page pulls `show_on_page = 1`.
+
+J. FAQ MANAGEMENT
+
+- Admin can:
+  - Add/edit/delete FAQs.
+  - Set `show_on_home` → appear in home FAQ strip.
+  - Set `show_on_faq_page` → appear on `/faq`.
+  - Reorder using sort_order.
+
+K. GALLERY MANAGEMENT
+
+- Admin can:
+  - Upload gallery images.
+  - Set title, description.
+  - Set `show_on_home` and/or `show_on_gallery_page`.
+  - Set sort_order.
+- Home gallery section auto-shows items flagged `show_on_home`.
+- Gallery page uses `show_on_gallery_page`.
+
+L. VIDEO MANAGEMENT
+
+- Admin can:
+  - Add/edit/delete videos.
+  - Choose video type (upload vs YouTube link).
+  - Upload file or enter URL.
+  - Set thumbnail.
+  - Set `show_on_home` and `show_on_video_page`.
+  - Sort_order.
+- Home video section uses `show_on_home`.
+- `/videos` page uses `show_on_video_page`.
+
+M. BLOG, PAGES, BANNERS, DEALERS, REPORTS
+
+- As per previous spec:
+  - Blog CRUD.
+  - CMS pages CRUD.
+  - Banners.
+  - Dealers.
+  - Sales reports, product reports, etc.
+
+------------------------------------------------
+5. SEO, INTERLINKING, SITEMAP
+------------------------------------------------
+
+- Every dynamic entity (segment, collection, category, product, blog, CMS page) has:
+  - slug, meta_title, meta_description, meta_keywords.
+- Admin can edit meta for each entity.
+- Implement:
+  - Breadcrumbs.
+  - Internal linking using slugs.
+  - XML sitemap generation.
+  - Robots.txt.
+  - JSON-LD for Organization, Product, BreadcrumbList.
+- URLs like:
+  - `/segment/{slug}`
+  - `/collection/{slug}`
+  - `/category/{slug}`
+  - `/product/{slug}`
+  - `/blog/{slug}`
+  - `/page/{slug}`
+
+------------------------------------------------
+6. PAYMENT & ORDER FLOW (RAZORPAY)
+------------------------------------------------
+
+- Standard flow:
+  - Cart → Checkout (address/login) → Create local order (pending) → Create Razorpay order → Razorpay Checkout → Signature verification → Update order, reduce stock, send email.
+- Implement Razorpay PHP SDK integration (server side).
+- Implement Razorpay webhook endpoint for payment updates/refunds.
+
+------------------------------------------------
+7. SECURITY & BEST PRACTICES
+------------------------------------------------
+
+- Use password_hash/password_verify.
+- CSRF tokens on all forms.
+- Use PDO prepared statements.
+- Validate & sanitize all input.
+- Admin route protection with roles.
+- Session hardening.
+- Basic caching for home/about sections and category menu.
+
+------------------------------------------------
+8. OUTPUT EXPECTATION
+------------------------------------------------
+
+Provide:
+
+1. **schema.sql** – all table definitions described above.
+2. Project folder structure with sample files.
+3. Core framework classes (Router, Controller, Model, View, Auth, CSRF, SEO).
+4. Frontend controllers & views for:
+   - Home, About, Category, Product, Contact, FAQ, Gallery, Video, Blog, etc.
+5. Admin controllers & views for:
+   - Sliders, Home sections, About sections, Categories, Products, Orders, Contact queries, Testimonials, FAQs, Gallery, Videos, Settings, etc.
+6. Razorpay integration code (server + client).
+7. `seed.sql` with some sample data.
+8. `README.md` with setup instructions and default admin login.
+
+PROMPT END
